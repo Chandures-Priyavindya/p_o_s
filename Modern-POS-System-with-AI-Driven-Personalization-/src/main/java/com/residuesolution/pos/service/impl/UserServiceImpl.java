@@ -6,6 +6,7 @@ import com.residuesolution.pos.repository.UserRepository;
 import com.residuesolution.pos.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,11 +18,16 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final ModelMapper mapper;
+    private final PasswordEncoder passwordEncoder; // Add password encoder
 
     @Override
     public Boolean addUser(User user) {
         // Convert DTO to Entity
         UserEntity userEntity = mapper.map(user, UserEntity.class);
+
+        // Encode the password before saving
+        userEntity.setPassword(passwordEncoder.encode(user.getPassword()));
+
         UserEntity savedUser = userRepository.save(userEntity);
         return savedUser != null;
     }
@@ -32,17 +38,27 @@ public class UserServiceImpl implements UserService {
         List<UserEntity> userEntities = userRepository.findAll();
         // Convert List of Entities to List of DTOs using Stream.toList() for an immutable list
         return userEntities.stream()
-                .map(userEntity -> mapper.map(userEntity, User.class))
+                .map(userEntity -> {
+                    User userDto = mapper.map(userEntity, User.class);
+                    // Don't expose password in DTO
+                    userDto.setPassword(null);
+                    return userDto;
+                })
                 .toList();
     }
-
 
     @Override
     public User getUserById(Integer id) {
         // Fetch user by ID
         Optional<UserEntity> userEntity = userRepository.findById(id);
         // Convert Entity to DTO if found
-        return userEntity.map(user -> mapper.map(user, User.class)).orElse(null);
+        if (userEntity.isPresent()) {
+            User userDto = mapper.map(userEntity.get(), User.class);
+            // Don't expose password in DTO
+            userDto.setPassword(null);
+            return userDto;
+        }
+        return null;
     }
 
     @Override
@@ -50,15 +66,20 @@ public class UserServiceImpl implements UserService {
         // Check if the user exists
         Optional<UserEntity> optionalUserEntity = userRepository.findById(id);
         if (optionalUserEntity.isPresent()) {
-            // Map DTO to Entity and update
             UserEntity existingUser = optionalUserEntity.get();
             existingUser.setName(user.getName());
             existingUser.setEmail(user.getEmail());
-            existingUser.setPassword(user.getPassword());
+
+            // Only update password if provided
+            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+                existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+            }
+
             existingUser.setRole(user.getRole());
             existingUser.setBiometricData(user.getBiometricData());
             existingUser.setMfaEnabled(user.isMfaEnabled());
             existingUser.setActive(user.isActive());
+
             // Save the updated user entity
             userRepository.save(existingUser);
             return true;

@@ -9,6 +9,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -53,5 +54,27 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         return null; // Customer not found
+    }
+
+    // NEW: Get all customers implementation
+    @Override
+    public List<Customer> getAllCustomers() {
+        List<CustomerEntity> customerEntities = customerRepository.findAll();
+
+        // Convert List of Entities to List of DTOs
+        return customerEntities.stream()
+                .map(customerEntity -> mapper.map(customerEntity, Customer.class))
+                .toList();
+    }
+
+    // NEW: Delete customer implementation
+    @Override
+    public Boolean deleteCustomer(Integer customerId) {
+        // Check if customer exists
+        if (customerRepository.existsById(customerId)) {
+            customerRepository.deleteById(customerId);
+            return true;
+        }
+        return false; // Customer not found
     }
 }
