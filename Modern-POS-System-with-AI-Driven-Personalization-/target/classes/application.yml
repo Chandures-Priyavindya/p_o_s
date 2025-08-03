@@ -1,27 +1,23 @@
 server:
   port: 8080
 
-
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/modern_pos_system
     username: root
     password: 1234
 
-
   jpa:
     hibernate:
       ddl-auto: update
 
-
   output:
     ansi:
       enabled: always
-# Disable Spring Security completely
-security:
-  enabled: false
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
-
+      # Disable Spring Security completely
+      security:
+        enabled: true
+        autoconfigure:
+          exclude:
+            - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+            - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
