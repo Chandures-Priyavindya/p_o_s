@@ -17,7 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true) // Enable @PreAuthorize annotations
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -26,15 +26,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())  // Disable CSRF protection for API
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         // Allow Swagger UI and API docs without authentication
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        // Allow user registration endpoint (if you want to add users via API)
-                        .requestMatchers("/api/user/register").permitAll()
+
+                        // TEMPORARY: Allow these endpoints without authentication for testing
+                        .requestMatchers("/api/user/check-users", "/api/user/add-test-user", "/api/user/encode-password").permitAll()
+                        .requestMatchers("/api/customer/test-auth").permitAll()
+
                         // Require authentication for all other API endpoints
                         .requestMatchers("/api/**").authenticated()
+
                         // Allow all other requests
                         .anyRequest().permitAll()
                 )

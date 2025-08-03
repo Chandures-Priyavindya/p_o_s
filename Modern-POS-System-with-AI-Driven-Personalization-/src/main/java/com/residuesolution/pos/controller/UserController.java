@@ -8,6 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+
+import java.io.Serializable;
+import java.util.stream.Collectors;
 
 import java.util.List;
 import java.util.Map;
@@ -113,6 +117,44 @@ public class UserController {
             return ResponseEntity.ok("Password updated successfully");
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+    // Add this endpoint to check existing users (add after your existing methods)
+    @GetMapping("/check-users")
+    public ResponseEntity<?> checkExistingUsers() {
+        try {
+            List<User> users = userService.getAllUsers();
+
+            if (users.isEmpty()) {
+                return ResponseEntity.ok(Map.of(
+                        "message", "No users found in database",
+                        "count", 0,
+                        "suggestion", "You need to add users to the database first"
+                ));
+            }
+
+            // Return user info without passwords
+            List<Map<String, ? extends Serializable>> userInfo = users.stream()
+                    .map(user -> Map.of(
+                            "id", user.getId(),
+                            "name", user.getName(),
+                            "email", user.getEmail(),
+                            "role", user.getRole(),
+                            "isActive", user.isActive()
+                    ))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Found users in database",
+                    "count", users.size(),
+                    "users", userInfo
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of(
+                    "message", "Error checking users: " + e.getMessage(),
+                    "suggestion", "Check database connection and user table"
+            ));
         }
     }
 }
